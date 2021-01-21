@@ -1,9 +1,14 @@
 package main
 
 import (
+	"io"
+	"os"
+
 	"github.com/gin-gonic/gin"
 	"github.com/kangmingtay/go-gin-proj/controller"
+	"github.com/kangmingtay/go-gin-proj/middlewares"
 	"github.com/kangmingtay/go-gin-proj/service"
+	gindump "github.com/tpkeeper/gin-dump"
 )
 
 var (
@@ -11,8 +16,21 @@ var (
 	videoController controller.VideoController = controller.New(videoService)
 )
 
+// Create customized log file to write to
+func setupLogOutput() {
+	f, _ := os.Create("gin.log")
+	gin.DefaultWriter = io.MultiWriter(f, os.Stdout)
+}
+
 func main() {
-	server := gin.Default()
+
+	setupLogOutput()
+
+	server := gin.New()
+
+	// create middlewares
+	server.Use(gin.Recovery(), middlewares.Logger(),
+		middlewares.BasicAuth(), gindump.Dump())
 
 	server.GET("/ping", func(c *gin.Context) {
 		c.JSON(200, gin.H{
